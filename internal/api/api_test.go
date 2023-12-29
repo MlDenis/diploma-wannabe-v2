@@ -8,12 +8,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/stretchr/testify/assert"
-
 	"github.com/MlDenis/diploma-wannabe-v2/internal/db"
 	"github.com/MlDenis/diploma-wannabe-v2/internal/mocks"
 	"github.com/MlDenis/diploma-wannabe-v2/internal/models"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCookies(t *testing.T) {
@@ -54,7 +54,7 @@ func TestCookies(t *testing.T) {
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-
+			return
 		}
 	}(res.Body)
 

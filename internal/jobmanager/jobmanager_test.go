@@ -79,7 +79,7 @@ func TestJobmanager(t *testing.T) {
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-
+			return
 		}
 	}(res.Body)
 
@@ -100,7 +100,7 @@ func TestJobmanager(t *testing.T) {
 		defer func(Body io.ReadCloser) {
 			err := Body.Close()
 			if err != nil {
-
+				return
 			}
 		}(res.Body)
 
