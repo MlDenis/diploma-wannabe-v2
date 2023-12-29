@@ -114,25 +114,19 @@ func TestPostOrders(t *testing.T) {
 	handler.Post("/api/user/login", ur.Login)
 	handler.Post("/api/user/orders", r.UploadOrder)
 	ts := httptest.NewServer(handler)
-	err := handler.Cursor.SaveUserInfo(&models.UserInfo{
+	handler.Cursor.SaveUserInfo(&models.UserInfo{
 		Username: "test",
 		Password: "test",
 	})
-	if err != nil {
-		return
-	}
 
 	defer ts.Close()
 
 	buff := bytes.NewBuffer([]byte{})
 	encoder := json.NewEncoder(buff)
-	err = encoder.Encode(&models.UserInfo{
+	encoder.Encode(&models.UserInfo{
 		Username: "test",
 		Password: "test",
 	})
-	if err != nil {
-		return
-	}
 	request := httptest.NewRequest(http.MethodPost, "http://localhost:8080/api/user/login", buff)
 	request.Header.Add("Content-Type", "application/json")
 
@@ -141,12 +135,7 @@ func TestPostOrders(t *testing.T) {
 	handler.ServeHTTP(w, request)
 
 	res := w.Result()
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			return
-		}
-	}(res.Body)
+	defer res.Body.Close()
 
 	cookies := res.Cookies()
 
@@ -163,25 +152,17 @@ func TestPostOrders(t *testing.T) {
 			if tt.name == "Test Negative post order already registered by another user" {
 				buff := bytes.NewBuffer([]byte{})
 				encoder := json.NewEncoder(buff)
-				err := encoder.Encode(&models.UserInfo{
+				encoder.Encode(&models.UserInfo{
 					Username: "test2",
 					Password: "test2",
 				})
-				if err != nil {
-					return
-				}
 				request := httptest.NewRequest(http.MethodPost, "http://localhost:8080/api/user/register", buff)
 				request.Header.Add("Content-Type", "application/json")
 
 				w := httptest.NewRecorder()
 				handler.ServeHTTP(w, request)
 				res := w.Result()
-				defer func(Body io.ReadCloser) {
-					err := Body.Close()
-					if err != nil {
-						return
-					}
-				}(res.Body)
+				defer res.Body.Close()
 				cookies = res.Cookies()
 			}
 			request.AddCookie(cookies[0])
@@ -192,12 +173,7 @@ func TestPostOrders(t *testing.T) {
 				t.Errorf("Expected status code %d, got %d", tt.want.code, w.Code)
 			}
 
-			defer func(Body io.ReadCloser) {
-				err := Body.Close()
-				if err != nil {
-					return
-				}
-			}(res.Body)
+			defer res.Body.Close()
 			resBody, err := io.ReadAll(res.Body)
 			if err != nil {
 				t.Fatal(err)
@@ -293,10 +269,7 @@ func TestGetOrders(t *testing.T) {
 			w := httptest.NewRecorder()
 			if tt.name == "Test Positive order get" {
 				for _, order := range orders {
-					err := handler.Cursor.SaveOrder(order)
-					if err != nil {
-						return
-					}
+					handler.Cursor.SaveOrder(order)
 				}
 			}
 			handler.ServeHTTP(w, request)
@@ -304,12 +277,7 @@ func TestGetOrders(t *testing.T) {
 
 			assert.Equal(t, tt.want.code, res.StatusCode)
 
-			defer func(Body io.ReadCloser) {
-				err := Body.Close()
-				if err != nil {
-					return
-				}
-			}(res.Body)
+			defer res.Body.Close()
 			resBody, err := io.ReadAll(res.Body)
 			if err != nil {
 				t.Fatal(err)

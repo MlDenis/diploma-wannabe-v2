@@ -109,13 +109,10 @@ func TestAuthentication(t *testing.T) {
 	}
 	ur.Post("/api/user/login", ur.Login)
 	ts := httptest.NewServer(ur)
-	err := ur.Cursor.SaveUserInfo(&models.UserInfo{
+	ur.Cursor.SaveUserInfo(&models.UserInfo{
 		Username: "test",
 		Password: "test",
 	})
-	if err != nil {
-		return
-	}
 
 	defer ts.Close()
 
@@ -123,10 +120,7 @@ func TestAuthentication(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			buff := bytes.NewBuffer([]byte{})
 			encoder := json.NewEncoder(buff)
-			err := encoder.Encode(&tt.args.payload)
-			if err != nil {
-				return
-			}
+			encoder.Encode(&tt.args.payload)
 			request := httptest.NewRequest(http.MethodPost, tt.args.url, buff)
 			request.Header.Add("Content-Type", "application/json")
 
@@ -139,12 +133,7 @@ func TestAuthentication(t *testing.T) {
 				t.Errorf("Expected status code %d, got %d", tt.want.code, w.Code)
 			}
 
-			defer func(Body io.ReadCloser) {
-				err := Body.Close()
-				if err != nil {
-					return
-				}
-			}(res.Body)
+			defer res.Body.Close()
 			resBody, err := io.ReadAll(res.Body)
 			if err != nil {
 				t.Fatal(err)

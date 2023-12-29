@@ -3,7 +3,6 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -37,13 +36,10 @@ func TestCookies(t *testing.T) {
 
 	buff := bytes.NewBuffer([]byte{})
 	encoder := json.NewEncoder(buff)
-	err := encoder.Encode(&models.UserInfo{
+	encoder.Encode(&models.UserInfo{
 		Username: "test",
 		Password: "test",
 	})
-	if err != nil {
-		return
-	}
 	request := httptest.NewRequest(http.MethodPost, "http://localhost:8080/api/user/register", buff)
 	request.Header.Add("Content-Type", "application/json")
 
@@ -51,12 +47,7 @@ func TestCookies(t *testing.T) {
 
 	handler.ServeHTTP(w, request)
 	res := w.Result()
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			return
-		}
-	}(res.Body)
+	defer res.Body.Close()
 
 	assert.Equal(t, res.StatusCode, 200)
 }

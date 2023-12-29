@@ -95,44 +95,32 @@ func TestWithdrawal(t *testing.T) {
 	handler.Post("/api/user/login", ur.Login)
 	handler.Post("/api/user/balance/withdraw", br.WithdrawMoney)
 	ts := httptest.NewServer(handler)
-	err := handler.Cursor.SaveUserInfo(&models.UserInfo{
+	handler.Cursor.SaveUserInfo(&models.UserInfo{
 		Username: "test",
 		Password: "test",
 	})
-	if err != nil {
-		return
-	}
-	err = handler.Cursor.SaveOrder(
+	handler.Cursor.SaveOrder(
 		&models.Order{
 			Number:     "2377225624",
 			UploadedAt: time.Now(),
 		},
 	)
-	if err != nil {
-		return
-	}
-	_, err = handler.Cursor.UpdateUserBalance(
+	handler.Cursor.UpdateUserBalance(
 		"test", &models.Balance{
 			User:      "test",
 			Current:   752,
 			Withdrawn: 0,
 		},
 	)
-	if err != nil {
-		return
-	}
 
 	defer ts.Close()
 
 	buff := bytes.NewBuffer([]byte{})
 	encoder := json.NewEncoder(buff)
-	err = encoder.Encode(&models.UserInfo{
+	encoder.Encode(&models.UserInfo{
 		Username: "test",
 		Password: "test",
 	})
-	if err != nil {
-		return
-	}
 	request := httptest.NewRequest(http.MethodPost, "http://localhost:8080/api/user/login", buff)
 	request.Header.Add("Content-Type", "application/json")
 
@@ -141,12 +129,7 @@ func TestWithdrawal(t *testing.T) {
 	handler.ServeHTTP(w, request)
 
 	res := w.Result()
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			return
-		}
-	}(res.Body)
+	defer res.Body.Close()
 
 	cookies := res.Cookies()
 
@@ -156,10 +139,7 @@ func TestWithdrawal(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			buff := bytes.NewBuffer([]byte{})
 			encoder := json.NewEncoder(buff)
-			err := encoder.Encode(tt.args.payload)
-			if err != nil {
-				return
-			}
+			encoder.Encode(tt.args.payload)
 			request := httptest.NewRequest(http.MethodPost, tt.args.url, buff)
 			request.Header.Add("Content-Type", "application/json")
 
@@ -173,12 +153,7 @@ func TestWithdrawal(t *testing.T) {
 				t.Errorf("Expected status code %d, got %d", tt.want.code, w.Code)
 			}
 
-			defer func(Body io.ReadCloser) {
-				err := Body.Close()
-				if err != nil {
-					return
-				}
-			}(res.Body)
+			defer res.Body.Close()
 			resBody, err := io.ReadAll(res.Body)
 			if err != nil {
 				t.Fatal(err)
@@ -261,19 +236,13 @@ func TestGetWithdrawal(t *testing.T) {
 	handler.Get("/api/user/withdrawals", br.GetWithdrawals)
 	handler.Post("/api/user/register", ur.RegisterUser)
 	ts := httptest.NewServer(handler)
-	err := handler.Cursor.SaveUserInfo(&models.UserInfo{
+	handler.Cursor.SaveUserInfo(&models.UserInfo{
 		Username: "test",
 		Password: "test",
 	})
-	if err != nil {
-		return
-	}
 	for _, withdrawal := range mockWithdrawals {
 		withdrawal.User = "test"
-		err := handler.Cursor.SaveWithdrawal(withdrawal)
-		if err != nil {
-			return
-		}
+		handler.Cursor.SaveWithdrawal(withdrawal)
 		withdrawal.User = ""
 	}
 
@@ -281,13 +250,10 @@ func TestGetWithdrawal(t *testing.T) {
 
 	buff := bytes.NewBuffer([]byte{})
 	encoder := json.NewEncoder(buff)
-	err = encoder.Encode(&models.UserInfo{
+	encoder.Encode(&models.UserInfo{
 		Username: "test",
 		Password: "test",
 	})
-	if err != nil {
-		return
-	}
 	request := httptest.NewRequest(http.MethodPost, "http://localhost:8080/api/user/login", buff)
 	request.Header.Add("Content-Type", "application/json")
 
@@ -296,12 +262,7 @@ func TestGetWithdrawal(t *testing.T) {
 	handler.ServeHTTP(w, request)
 
 	res := w.Result()
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			return
-		}
-	}(res.Body)
+	defer res.Body.Close()
 
 	cookies := res.Cookies()
 
@@ -315,43 +276,30 @@ func TestGetWithdrawal(t *testing.T) {
 			if tt.name == "Test Positive GET - no withdrawals found" {
 				buff := bytes.NewBuffer([]byte{})
 				encoder := json.NewEncoder(buff)
-				err := encoder.Encode(&models.UserInfo{
+				encoder.Encode(&models.UserInfo{
 					Username: "test2",
 					Password: "test2",
 				})
-				if err != nil {
-					return
-				}
 				request := httptest.NewRequest(http.MethodPost, "http://localhost:8080/api/user/register", buff)
 				request.Header.Add("Content-Type", "application/json")
 
 				w := httptest.NewRecorder()
 				handler.ServeHTTP(w, request)
 				res := w.Result()
-				defer func(Body io.ReadCloser) {
-					err := Body.Close()
-					if err != nil {
-						return
-					}
-				}(res.Body)
+				defer res.Body.Close()
 				cookies = res.Cookies()
 			}
 
 			request.AddCookie(cookies[0])
 			handler.ServeHTTP(w, request)
 			res := w.Result()
-			defer func(Body io.ReadCloser) {
-				err := Body.Close()
-				if err != nil {
-					return
-				}
-			}(res.Body)
+			defer res.Body.Close()
 
 			if res.StatusCode != tt.want.code {
 				t.Errorf("Expected status code %d, got %d", tt.want.code, w.Code)
 			}
 
-			var receivedWithdrawals []*models.Withdrawal
+			receivedWithdrawals := []*models.Withdrawal{}
 			if err := json.NewDecoder(res.Body).Decode(&receivedWithdrawals); err != nil {
 				panic(err)
 			}

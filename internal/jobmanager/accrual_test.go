@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -14,8 +13,8 @@ import (
 
 	"github.com/MlDenis/diploma-wannabe-v2/internal/logger"
 	"github.com/MlDenis/diploma-wannabe-v2/internal/models"
-	"github.com/go-chi/chi/v5"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,14 +33,8 @@ func (mock *MockAccrualHandler) GetAccrual(rw http.ResponseWriter, r *http.Reque
 	}
 	buff := bytes.NewBuffer([]byte{})
 	encoder := json.NewEncoder(buff)
-	err := encoder.Encode(response)
-	if err != nil {
-		return
-	}
-	_, err = rw.Write(buff.Bytes())
-	if err != nil {
-		return
-	}
+	encoder.Encode(response)
+	rw.Write(buff.Bytes())
 }
 
 func (mock *MockAccrualHandler) CreateOrder(rw http.ResponseWriter, r *http.Request) {
@@ -92,10 +85,7 @@ func initMockAccrual(addr string) *http.Server {
 		Handler: handler,
 	}
 	handler.HandleFunc("/shutdown", func(w http.ResponseWriter, r *http.Request) {
-		err := server.Shutdown(context.Background())
-		if err != nil {
-			return
-		}
+		server.Shutdown(context.Background())
 	})
 	err := server.ListenAndServe()
 	if err != nil {
@@ -117,30 +107,17 @@ func TestAccrualValidOrder(t *testing.T) {
 	if err != nil {
 		logger.ErrorLog.Fatal(err)
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			return
-		}
-	}(resp.Body)
+	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
 	getOrder, _ := http.NewRequest(http.MethodGet, "http://localhost:8081/api/orders/1", nil)
 	resp, err = client.Do(getOrder)
 	if err != nil {
 		logger.ErrorLog.Fatal(err)
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			return
-		}
-	}(resp.Body)
+	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
 	result := &models.AccrualResponse{}
-	err = json.NewDecoder(resp.Body).Decode(result)
-	if err != nil {
-		return
-	}
+	json.NewDecoder(resp.Body).Decode(result)
 	assert.Equal(t, &models.AccrualResponse{
 		Order:  "1",
 		Status: "REGISTERED",
@@ -153,18 +130,10 @@ func TestAccrualValidOrder(t *testing.T) {
 	if err != nil {
 		logger.ErrorLog.Fatal(err)
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			return
-		}
-	}(resp.Body)
+	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
 	result = &models.AccrualResponse{}
-	err = json.NewDecoder(resp.Body).Decode(result)
-	if err != nil {
-		return
-	}
+	json.NewDecoder(resp.Body).Decode(result)
 	assert.Equal(t, &models.AccrualResponse{
 		Order:  "1",
 		Status: "PROCESSING",
@@ -177,18 +146,10 @@ func TestAccrualValidOrder(t *testing.T) {
 	if err != nil {
 		logger.ErrorLog.Fatal(err)
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			return
-		}
-	}(resp.Body)
+	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
 	result = &models.AccrualResponse{}
-	err = json.NewDecoder(resp.Body).Decode(result)
-	if err != nil {
-		return
-	}
+	json.NewDecoder(resp.Body).Decode(result)
 	assert.Equal(t, &models.AccrualResponse{
 		Order:   "1",
 		Status:  "PROCESSED",
@@ -209,30 +170,17 @@ func TestAccrualInvalidOrder(t *testing.T) {
 	if err != nil {
 		logger.ErrorLog.Fatal(err)
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			return
-		}
-	}(resp.Body)
+	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
 	getOrder, _ := http.NewRequest(http.MethodGet, "http://localhost:8081/api/orders/2", nil)
 	resp, err = client.Do(getOrder)
 	if err != nil {
 		logger.ErrorLog.Fatal(err)
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			return
-		}
-	}(resp.Body)
+	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
 	result := &models.AccrualResponse{}
-	err = json.NewDecoder(resp.Body).Decode(result)
-	if err != nil {
-		return
-	}
+	json.NewDecoder(resp.Body).Decode(result)
 	assert.Equal(t, &models.AccrualResponse{
 		Order:  "2",
 		Status: "REGISTERED",
@@ -245,18 +193,10 @@ func TestAccrualInvalidOrder(t *testing.T) {
 	if err != nil {
 		logger.ErrorLog.Fatal(err)
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			return
-		}
-	}(resp.Body)
+	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
 	result = &models.AccrualResponse{}
-	err = json.NewDecoder(resp.Body).Decode(result)
-	if err != nil {
-		return
-	}
+	json.NewDecoder(resp.Body).Decode(result)
 	assert.Equal(t, &models.AccrualResponse{
 		Order:  "2",
 		Status: "INVALID",
@@ -276,11 +216,6 @@ func TestAccrualNoSuchOrder(t *testing.T) {
 	if err != nil {
 		logger.ErrorLog.Fatal(err)
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			return
-		}
-	}(resp.Body)
+	defer resp.Body.Close()
 	assert.Equal(t, 204, resp.StatusCode)
 }

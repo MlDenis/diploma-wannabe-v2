@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/MlDenis/diploma-wannabe-v2/internal/mocks"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -64,13 +63,10 @@ func TestBalanceGet(t *testing.T) {
 	handler.Post("/api/user/login", ur.Login)
 	handler.Get("/api/user/balance", br.GetBalance)
 	ts := httptest.NewServer(handler)
-	err := handler.Cursor.SaveUserInfo(&models.UserInfo{
+	handler.Cursor.SaveUserInfo(&models.UserInfo{
 		Username: "test",
 		Password: "test",
 	})
-	if err != nil {
-		return
-	}
 
 	result, _ := handler.Cursor.UpdateUserBalance(
 		"test", expectedBalance,
@@ -79,13 +75,10 @@ func TestBalanceGet(t *testing.T) {
 
 	buff := bytes.NewBuffer([]byte{})
 	encoder := json.NewEncoder(buff)
-	err = encoder.Encode(&models.UserInfo{
+	encoder.Encode(&models.UserInfo{
 		Username: "test",
 		Password: "test",
 	})
-	if err != nil {
-		return
-	}
 	request := httptest.NewRequest(http.MethodPost, "http://localhost:8080/api/user/login", buff)
 	request.Header.Add("Content-Type", "application/json")
 
@@ -94,12 +87,7 @@ func TestBalanceGet(t *testing.T) {
 	handler.ServeHTTP(w, request)
 
 	res := w.Result()
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			return
-		}
-	}(res.Body)
+	defer res.Body.Close()
 
 	cookies := res.Cookies()
 
@@ -120,12 +108,7 @@ func TestBalanceGet(t *testing.T) {
 				t.Errorf("Expected status code %d, got %d", tt.want.code, w.Code)
 			}
 
-			defer func(Body io.ReadCloser) {
-				err := Body.Close()
-				if err != nil {
-					return
-				}
-			}(res.Body)
+			defer res.Body.Close()
 
 			actualBalance := &models.Balance{}
 			if err := json.NewDecoder(res.Body).Decode(&actualBalance); err != nil {

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -34,22 +33,14 @@ func TestJobmanager(t *testing.T) {
 		NewJobmanager(cursor, "localhost:8081", &ctx),
 	}
 	ts := httptest.NewServer(handler)
-	err := handler.Cursor.SaveUserInfo(&models.UserInfo{
+	handler.Cursor.SaveUserInfo(&models.UserInfo{
 		Username: "test",
 		Password: "test",
 	})
-	if err != nil {
-		return
-	}
 
 	defer ts.Close()
 
-	defer func(method, url string, body io.Reader) {
-		_, err := http.NewRequest(method, url, body)
-		if err != nil {
-			return
-		}
-	}(http.MethodGet, "http://localhost:8081/shutdown", nil)
+	defer http.NewRequest(http.MethodGet, "http://localhost:8081/shutdown", nil)
 
 	go func() {
 		initMockAccrual("localhost:8081")
@@ -61,13 +52,10 @@ func TestJobmanager(t *testing.T) {
 
 	buff := bytes.NewBuffer([]byte{})
 	encoder := json.NewEncoder(buff)
-	err = encoder.Encode(&models.UserInfo{
+	encoder.Encode(&models.UserInfo{
 		Username: "test",
 		Password: "test",
 	})
-	if err != nil {
-		return
-	}
 	request := httptest.NewRequest(http.MethodPost, "http://localhost:8080/api/user/login", buff)
 	request.Header.Add("Content-Type", "application/json")
 
@@ -76,12 +64,7 @@ func TestJobmanager(t *testing.T) {
 	handler.ServeHTTP(w, request)
 
 	res := w.Result()
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			return
-		}
-	}(res.Body)
+	defer res.Body.Close()
 
 	cookies := res.Cookies()
 
@@ -97,12 +80,7 @@ func TestJobmanager(t *testing.T) {
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, createOrder)
 		res := w.Result()
-		defer func(Body io.ReadCloser) {
-			err := Body.Close()
-			if err != nil {
-				return
-			}
-		}(res.Body)
+		defer res.Body.Close()
 
 		assert.Equal(t, 202, res.StatusCode)
 
@@ -111,17 +89,9 @@ func TestJobmanager(t *testing.T) {
 		if err != nil {
 			logger.ErrorLog.Fatal(err)
 		}
-		defer func(Body io.ReadCloser) {
-			err := Body.Close()
-			if err != nil {
-				return
-			}
-		}(resp.Body)
+		defer resp.Body.Close()
 		assert.Equal(t, 200, resp.StatusCode)
-		err = handler.Manager.AddJob("test", order)
-		if err != nil {
-			return
-		}
+		handler.Manager.AddJob("test", order)
 	}
 	time.Sleep(2 * time.Second)
 	request = httptest.NewRequest(http.MethodGet, "http://localhost:8080/api/user/orders", nil)
@@ -129,12 +99,7 @@ func TestJobmanager(t *testing.T) {
 	w = httptest.NewRecorder()
 	handler.ServeHTTP(w, request)
 	response := w.Result()
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			return
-		}
-	}(response.Body)
+	defer response.Body.Close()
 
 	assert.Equal(t, 200, response.StatusCode)
 	result := []*models.Order{}
@@ -155,12 +120,7 @@ func TestJobmanager(t *testing.T) {
 	w = httptest.NewRecorder()
 	handler.ServeHTTP(w, request)
 	response = w.Result()
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			return
-		}
-	}(response.Body)
+	defer response.Body.Close()
 
 	assert.Equal(t, 200, response.StatusCode)
 	result = []*models.Order{}
