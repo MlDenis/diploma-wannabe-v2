@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS _sessions;
+DROP TABLE IF EXISTS userinfo;
