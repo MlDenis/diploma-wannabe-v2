@@ -7,8 +7,6 @@ import (
 	"github.com/MlDenis/diploma-wannabe-v2/internal/jobmanager"
 )
 
-const REQUESTTIMEOUT = 60
-
 type UserRouter struct {
 	*chi.Mux
 	Cursor *db.Cursor

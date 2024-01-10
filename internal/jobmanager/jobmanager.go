@@ -2,6 +2,8 @@ package jobmanager
 
 import (
 	"context"
+	"github.com/MlDenis/diploma-wannabe-v2/internal/configuration"
+	"net/http"
 	"sync"
 	"time"
 
@@ -28,8 +30,6 @@ type Jobmanager struct {
 	context    context.Context
 	Shutdown   context.CancelFunc
 }
-
-const JOBTIMEOUT = 10
 
 func NewJobmanager(cursor *db.Cursor, accrualURL string, parent *context.Context) *Jobmanager {
 	ctx, cancel := context.WithCancel(*parent)
@@ -69,7 +69,7 @@ func (jm *Jobmanager) RunJob(job *Job) {
 	if err != nil {
 		job.cancel()
 	}
-	if statusCode == 429 {
+	if statusCode == http.StatusTooManyRequests {
 		time.Sleep(time.Second)
 	}
 	for response.Status != "INVALID" && response.Status != "PROCESSED" {
@@ -96,7 +96,7 @@ func (jm *Jobmanager) RunJob(job *Job) {
 }
 
 func (jm *Jobmanager) AddJob(orderNumber string, username string) error {
-	_, cancel := context.WithTimeout(jm.context, JOBTIMEOUT*time.Second)
+	_, cancel := context.WithTimeout(jm.context, configuration.JOBTIMEOUT*time.Second)
 	jm.Jobs <- &Job{orderNumber: orderNumber, username: username, cancel: cancel}
 	if jm.Jobs == nil {
 		cancel()

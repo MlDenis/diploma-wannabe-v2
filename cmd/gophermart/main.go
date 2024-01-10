@@ -17,4 +17,5 @@ func main() {
 		logger.ErrorLog.Fatal(_err)
 	}
 	newApp.Run()
+
 }

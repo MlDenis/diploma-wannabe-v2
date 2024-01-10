@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"github.com/MlDenis/diploma-wannabe-v2/internal/configuration"
 	"time"
 
 	"github.com/MlDenis/diploma-wannabe-v2/internal/errors"
@@ -14,8 +15,6 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
-
-const IDBTIMEOUT = 1
 
 type IDBInterface interface {
 	SaveUserInfo(*models.UserInfo) error
@@ -98,7 +97,7 @@ func (c *IDBCursor) Close() {
 }
 
 func (c *IDBCursor) Ping() error {
-	ctx, cancel := context.WithTimeout(c.Context, IDBTIMEOUT*time.Second)
+	ctx, cancel := context.WithTimeout(c.Context, configuration.IDBTIMEOUT*time.Second)
 	defer cancel()
 	if err := c.DB.PingContext(ctx); err != nil {
 		logger.ErrorLog.Printf("ping error, database unreachable?: %e", err)
@@ -282,8 +281,8 @@ func (c *IDBCursor) SaveWithdrawal(withdrawal *models.Withdrawal) error {
 
 func (c *IDBCursor) UpdateOrder(username string, from *models.AccrualResponse) error {
 	var status string
-	if from.Status == "REGISTERED" {
-		status = "PROCESSING"
+	if from.Status == configuration.REGISTERED {
+		status = configuration.PROCESSING
 	} else {
 		status = from.Status
 	}
