@@ -29,6 +29,7 @@ type BalanceRouter struct {
 type Handler struct {
 	*chi.Mux
 	Cursor *db.Cursor
+	Logger *zap.Logger
 }
 
 func NewHandler(cursor *db.Cursor, manager *jobmanager.Jobmanager, l *zap.Logger) *Handler {

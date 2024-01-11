@@ -8,6 +8,7 @@ require (
 	github.com/go-resty/resty/v2 v2.11.0
 	github.com/golang-migrate/migrate/v4 v4.17.0
 	github.com/google/uuid v1.5.0
+	github.com/gorilla/securecookie v1.1.2
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/stretchr/testify v1.8.4
 	github.com/theplant/luhn v0.0.0-20170224032821-81a1a381387a

@@ -1,12 +1,16 @@
 package api
 
 import (
-	"compress/gzip"
 	"io"
 	"net/http"
 	"strings"
 	"time"
+
+	"compress/gzip"
+	"github.com/gorilla/securecookie"
 )
+
+var s = securecookie.New([]byte("your-hash-key"), []byte("your-block-key"))
 
 type gzipWriter struct {
 	http.ResponseWriter
@@ -14,7 +18,6 @@ type gzipWriter struct {
 }
 
 func (w gzipWriter) Write(b []byte) (int, error) {
-	// w.Writer будет отвечать за gzip-сжатие, поэтому пишем в него
 	return w.Writer.Write(b)
 }
 
@@ -60,7 +63,14 @@ func (h *Handler) CookieHandle(next http.Handler) http.Handler {
 		}
 		sessionToken := c.Value
 
-		userSession, err := h.Cursor.GetSession(sessionToken, h.Logger)
+		value := ""
+		err = s.Decode("session_token", sessionToken, &value)
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		userSession, err := h.Cursor.GetSession(value, h.Logger)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
