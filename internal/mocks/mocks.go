@@ -4,6 +4,7 @@ import (
 	"github.com/MlDenis/diploma-wannabe-v2/internal/db"
 	"github.com/MlDenis/diploma-wannabe-v2/internal/errors"
 	"github.com/MlDenis/diploma-wannabe-v2/internal/models"
+	"go.uber.org/zap"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -33,12 +34,12 @@ func NewMock() *MockDB {
 	}
 }
 
-func (mock *MockDB) SaveSession(id string, session *models.Session) error {
+func (mock *MockDB) SaveSession(id string, session *models.Session, l *zap.Logger) error {
 	mock.sessions[id] = *session
 	return nil
 }
 
-func (mock *MockDB) SaveUserInfo(info *models.UserInfo) error {
+func (mock *MockDB) SaveUserInfo(info *models.UserInfo, l *zap.Logger) error {
 
 	for k := range mock.storage {
 		if k == info.Username {
@@ -50,7 +51,7 @@ func (mock *MockDB) SaveUserInfo(info *models.UserInfo) error {
 	return nil
 }
 
-func (mock *MockDB) GetUserInfo(info *models.UserInfo) (*models.UserInfo, error) {
+func (mock *MockDB) GetUserInfo(info *models.UserInfo, l *zap.Logger) (*models.UserInfo, error) {
 	for k, v := range mock.storage {
 		if k == info.Username {
 			return &models.UserInfo{
@@ -62,7 +63,7 @@ func (mock *MockDB) GetUserInfo(info *models.UserInfo) (*models.UserInfo, error)
 	return nil, errors.ErrValidation
 }
 
-func (mock *MockDB) GetOrder(username string, number string) (*models.Order, error) {
+func (mock *MockDB) GetOrder(username string, number string, l *zap.Logger) (*models.Order, error) {
 	for user, orders := range mock.orders {
 		if user == username {
 			for _, order := range orders {
@@ -76,19 +77,19 @@ func (mock *MockDB) GetOrder(username string, number string) (*models.Order, err
 	return nil, nil
 }
 
-func (mock *MockDB) SaveOrder(order *models.Order) error {
+func (mock *MockDB) SaveOrder(order *models.Order, l *zap.Logger) error {
 	mock.orders[order.Username] = append(mock.orders[order.Username], order)
 	return nil
 }
 
-func (mock *MockDB) GetOrders(username string) ([]*models.Order, error) {
+func (mock *MockDB) GetOrders(username string, l *zap.Logger) ([]*models.Order, error) {
 	if len(mock.orders[username]) == 0 {
 		return nil, nil
 	}
 	return mock.orders[username], nil
 }
 
-func (mock *MockDB) GetUsernameByToken(token string) (string, error) {
+func (mock *MockDB) GetUsernameByToken(token string, l *zap.Logger) (string, error) {
 	session, ok := mock.sessions[token]
 	if !ok {
 		return "", errors.ErrValidation
@@ -96,7 +97,7 @@ func (mock *MockDB) GetUsernameByToken(token string) (string, error) {
 	return session.Username, nil
 }
 
-func (mock *MockDB) GetUserBalance(username string) (*models.Balance, error) {
+func (mock *MockDB) GetUserBalance(username string, l *zap.Logger) (*models.Balance, error) {
 	balance, ok := mock.balance[username]
 	if !ok {
 		return nil, errors.ErrValidation
@@ -104,21 +105,21 @@ func (mock *MockDB) GetUserBalance(username string) (*models.Balance, error) {
 	return balance, nil
 }
 
-func (mock *MockDB) UpdateUserBalance(username string, newBalance *models.Balance) (*models.Balance, error) {
+func (mock *MockDB) UpdateUserBalance(username string, newBalance *models.Balance, l *zap.Logger) (*models.Balance, error) {
 	mock.balance[username] = newBalance
 	return newBalance, nil
 }
 
-func (mock *MockDB) GetWithdrawals(username string) ([]*models.Withdrawal, error) {
+func (mock *MockDB) GetWithdrawals(username string, l *zap.Logger) ([]*models.Withdrawal, error) {
 	return mock.withdrawals[username], nil
 }
 
-func (mock *MockDB) SaveWithdrawal(withdrawal *models.Withdrawal) error {
+func (mock *MockDB) SaveWithdrawal(withdrawal *models.Withdrawal, l *zap.Logger) error {
 	mock.withdrawals[withdrawal.User] = append(mock.withdrawals[withdrawal.User], withdrawal)
 	return nil
 }
 
-func (mock *MockDB) UpdateOrder(username string, from *models.AccrualResponse) error {
+func (mock *MockDB) UpdateOrder(username string, from *models.AccrualResponse, l *zap.Logger) error {
 	orders := mock.orders[username]
 	for _, order := range orders {
 		if order.Number == from.Order {
@@ -134,7 +135,7 @@ func (mock *MockDB) UpdateOrder(username string, from *models.AccrualResponse) e
 	return nil
 }
 
-func (mock *MockDB) GetSession(token string) (*models.Session, error) {
+func (mock *MockDB) GetSession(token string, l *zap.Logger) (*models.Session, error) {
 	session, ok := mock.sessions[token]
 	if !ok {
 		return nil, errors.ErrDatabaseSQLQuery

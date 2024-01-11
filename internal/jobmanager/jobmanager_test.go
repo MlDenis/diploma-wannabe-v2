@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/MlDenis/diploma-wannabe-v2/internal/logger"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -25,6 +26,7 @@ type TestHandler struct {
 }
 
 func TestJobmanager(t *testing.T) {
+	l, _ := logger.InitializeLogger("info")
 	cursor := &db.Cursor{IDBInterface: mocks.NewMock()}
 	ctx := context.Background()
 	handler := &TestHandler{
@@ -36,7 +38,7 @@ func TestJobmanager(t *testing.T) {
 	handler.Cursor.SaveUserInfo(&models.UserInfo{
 		Username: "test",
 		Password: "test",
-	})
+	}, l)
 
 	defer ts.Close()
 
@@ -48,7 +50,7 @@ func TestJobmanager(t *testing.T) {
 	client := &http.Client{}
 
 	orders := []string{"11111111", "22222222"}
-	go handler.Manager.ManageJobs("http://localhost:8081")
+	go handler.Manager.ManageJobs("http://localhost:8081", l)
 
 	buff := bytes.NewBuffer([]byte{})
 	encoder := json.NewEncoder(buff)

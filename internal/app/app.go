@@ -21,7 +21,7 @@ type App struct {
 
 func (a *App) Run() error {
 
-	go a.manager.ManageJobs(a.config.Accrual)
+	go a.manager.ManageJobs(a.config.Accrual, a.logger)
 
 	err := a.Server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
@@ -49,7 +49,7 @@ func NewApp(config *config.Config) (*App, error) {
 		return nil, err
 	}
 	manager := jobmanager.NewJobmanager(cursor, config.Accrual, &ctx)
-	handler := api.NewHandler(cursor, manager)
+	handler := api.NewHandler(cursor, manager, l)
 	server := &http.Server{
 		Addr:    config.Address,
 		Handler: handler,
