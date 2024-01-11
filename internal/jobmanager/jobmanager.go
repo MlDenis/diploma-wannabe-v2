@@ -114,9 +114,11 @@ func (jm *Jobmanager) ManageJobs(accrualURL string, l *zap.Logger) {
 	default:
 		for job := range jm.Jobs {
 			wg.Add(1)
-			l.Info("Running job for order", zap.String("", job.orderNumber))
-			go jm.RunJob(job, l)
-			wg.Done()
+			go func(wg sync.WaitGroup) {
+				defer wg.Done()
+				l.Info("Running job for order", zap.String("", job.orderNumber))
+				go jm.RunJob(job, l)
+			}(wg)
 		}
 	}
 	wg.Wait()
