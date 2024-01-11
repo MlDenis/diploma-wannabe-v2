@@ -60,7 +60,7 @@ func (h *Handler) CookieHandle(next http.Handler) http.Handler {
 		}
 		sessionToken := c.Value
 
-		userSession, err := h.Cursor.GetSession(sessionToken)
+		userSession, err := h.Cursor.GetSession(sessionToken, h.Logger)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return

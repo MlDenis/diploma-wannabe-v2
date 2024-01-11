@@ -18,13 +18,13 @@ func (h *BalanceRouter) WithdrawMoney(rw http.ResponseWriter, r *http.Request) {
 
 	cookie, _ := r.Cookie("session_token")
 	sessionToken := cookie.Value
-	username, err := h.Cursor.GetUsernameByToken(sessionToken)
+	username, err := h.Cursor.GetUsernameByToken(sessionToken, h.Logger)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	userBalance, err := h.Cursor.GetUserBalance(username)
+	userBalance, err := h.Cursor.GetUserBalance(username, h.Logger)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
@@ -40,7 +40,7 @@ func (h *BalanceRouter) WithdrawMoney(rw http.ResponseWriter, r *http.Request) {
 		Order:       withrawal.Order,
 		Sum:         withrawal.Sum,
 		ProcessedAt: time.Now(),
-	})
+	}, h.Logger)
 	if err != nil {
 		return
 	}
@@ -48,7 +48,7 @@ func (h *BalanceRouter) WithdrawMoney(rw http.ResponseWriter, r *http.Request) {
 		User:      username,
 		Current:   resultedAccrual,
 		Withdrawn: resultedWithdrawn,
-	})
+	}, h.Logger)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 	}
@@ -63,12 +63,12 @@ func (h *BalanceRouter) WithdrawMoney(rw http.ResponseWriter, r *http.Request) {
 func (h *BalanceRouter) GetWithdrawals(rw http.ResponseWriter, r *http.Request) {
 	cookie, _ := r.Cookie("session_token")
 	sessionToken := cookie.Value
-	username, err := h.Cursor.GetUsernameByToken(sessionToken)
+	username, err := h.Cursor.GetUsernameByToken(sessionToken, h.Logger)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	withdrawals, err := h.Cursor.GetWithdrawals(username)
+	withdrawals, err := h.Cursor.GetWithdrawals(username, h.Logger)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 	}

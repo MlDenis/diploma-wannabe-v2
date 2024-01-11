@@ -106,20 +106,30 @@ func (jm *Jobmanager) AddJob(orderNumber string, username string) error {
 	return nil
 }
 
-func (jm *Jobmanager) ManageJobs(accrualURL string, l *zap.Logger) {
+func (jm *Jobmanager) ManageJobs(ctx context.Context, accrualURL string, done chan bool, l *zap.Logger) {
 	var wg sync.WaitGroup
-	select {
-	case <-jm.context.Done():
-		close(jm.Jobs)
-	default:
-		for job := range jm.Jobs {
-			wg.Add(1)
-			go func(wg sync.WaitGroup) {
-				defer wg.Done()
-				l.Info("Running job for order", zap.String("", job.orderNumber))
-				go jm.RunJob(job, l)
-			}(wg)
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				close(jm.Jobs)
+				done <- true
+				return
+			case job, ok := <-jm.Jobs:
+				if !ok {
+					done <- true
+					return
+				}
+				wg.Add(1)
+				go func(job *Job) {
+					defer wg.Done()
+					l.Info("Running job for order", zap.String("", job.orderNumber))
+					jm.RunJob(job, l)
+				}(job)
+			}
 		}
-	}
+	}()
+
 	wg.Wait()
 }

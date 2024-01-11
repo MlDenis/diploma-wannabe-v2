@@ -10,6 +10,7 @@ import (
 type UserRouter struct {
 	*chi.Mux
 	Cursor *db.Cursor
+	Logger *zap.Logger
 }
 
 type OrderRouter struct {

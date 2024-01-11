@@ -19,18 +19,31 @@ type App struct {
 	Logger  *zap.Logger
 }
 
-func (a *App) Run() error {
+func (a *App) Run(ctx context.Context) error {
 
-	go a.manager.ManageJobs(a.config.Accrual, a.Logger)
+	done := make(chan bool)
 
-	err := a.Server.ListenAndServe()
-	if err != nil && err != http.ErrServerClosed {
-		a.Logger.Info("Shutting down jobmanager")
-		a.manager.Shutdown()
-		a.Logger.Info("Server error: %e")
-		return err
+	go a.manager.ManageJobs(ctx, a.config.Accrual, a.Logger)
+
+	go func() {
+		if err := a.Server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			a.Logger.Info("Shutting down jobmanager")
+			a.manager.Shutdown()
+			a.Logger.Info("Server error: %e")
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+		// Если контекст был отменен, остановите сервер и закройте канал done
+		a.Server.Shutdown(ctx)
+		close(done)
+	case <-done:
+		// Если работа была завершена, просто верните nil
+		return nil
 	}
-	return nil
+
+	return ctx.Err()
 }
 
 func NewApp(config *config.Config, ctx context.Context) (*App, error) {

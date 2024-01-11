@@ -30,7 +30,7 @@ func main() {
 
 	go func(wg *sync.WaitGroup) {
 		defer wg.Done()
-		err := gophermart.Run()
+		err := gophermart.Run(ctx)
 		if err != nil && err != http.ErrServerClosed {
 			gophermart.Logger.Error(err.Error())
 		}

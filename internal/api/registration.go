@@ -3,13 +3,14 @@ package api
 import (
 	"encoding/json"
 	"github.com/MlDenis/diploma-wannabe-v2/internal/models"
+	"go.uber.org/zap"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-func (h *UserRouter) RegisterUser(rw http.ResponseWriter, r *http.Request) {
+func (h *UserRouter) RegisterUser(rw http.ResponseWriter, r *http.Request, l *zap.Logger) {
 	userInput := &models.UserInfo{}
 	if err := json.NewDecoder(r.Body).Decode(&userInput); err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
@@ -19,7 +20,7 @@ func (h *UserRouter) RegisterUser(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := h.Cursor.SaveUserInfo(userInput); err != nil {
+	if err := h.Cursor.SaveUserInfo(userInput, l); err != nil {
 		http.Error(rw, "user already exists", http.StatusConflict)
 		return
 	}
@@ -30,7 +31,7 @@ func (h *UserRouter) RegisterUser(rw http.ResponseWriter, r *http.Request) {
 		Username:  userInput.Username,
 		ExpiresAt: expiresAt,
 		Token:     sessionToken,
-	})
+	}, l)
 	if err != nil {
 		return
 	}
@@ -38,7 +39,7 @@ func (h *UserRouter) RegisterUser(rw http.ResponseWriter, r *http.Request) {
 		User:      userInput.Username,
 		Current:   0.0,
 		Withdrawn: 0.0,
-	})
+	}, l)
 	if err != nil {
 		return
 	}
