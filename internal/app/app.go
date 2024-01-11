@@ -16,24 +16,24 @@ type App struct {
 	config  *config.Config
 	manager *jobmanager.Jobmanager
 	Server  *http.Server
-	logger  *zap.Logger
+	Logger  *zap.Logger
 }
 
 func (a *App) Run() error {
 
-	go a.manager.ManageJobs(a.config.Accrual, a.logger)
+	go a.manager.ManageJobs(a.config.Accrual, a.Logger)
 
 	err := a.Server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
-		a.logger.Info("Shutting down jobmanager")
+		a.Logger.Info("Shutting down jobmanager")
 		a.manager.Shutdown()
-		a.logger.Info("Server error: %e")
+		a.Logger.Info("Server error: %e")
 		return err
 	}
 	return nil
 }
 
-func NewApp(config *config.Config) (*App, error) {
+func NewApp(config *config.Config, ctx context.Context) (*App, error) {
 	l, err := logger.InitializeLogger(config.LogLevel)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,6 @@ func NewApp(config *config.Config) (*App, error) {
 	l.Info("Accrual addr is: ", zap.String("", config.Accrual))
 	l.Info("DB addr is: ", zap.String("", config.DatabaseURI))
 
-	ctx := context.Background()
 	cursor, err := db.GetCursor(config.DatabaseURI, l)
 	if err != nil {
 		return nil, err
@@ -58,6 +57,6 @@ func NewApp(config *config.Config) (*App, error) {
 		config:  config,
 		manager: manager,
 		Server:  server,
-		logger:  l,
+		Logger:  l,
 	}, nil
 }

@@ -3,19 +3,18 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"go.uber.org/zap"
 	"net/http"
 )
 
-func (h *BalanceRouter) GetBalance(rw http.ResponseWriter, r *http.Request, l *zap.Logger) {
+func (h *BalanceRouter) GetBalance(rw http.ResponseWriter, r *http.Request) {
 	cookie, _ := r.Cookie("session_token")
 	sessionToken := cookie.Value
-	username, err := h.Cursor.GetUsernameByToken(sessionToken, l)
+	username, err := h.Cursor.GetUsernameByToken(sessionToken, h.Logger)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	balance, err := h.Cursor.GetUserBalance(username, l)
+	balance, err := h.Cursor.GetUserBalance(username, h.Logger)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return

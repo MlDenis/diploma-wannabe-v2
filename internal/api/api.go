@@ -22,6 +22,7 @@ type OrderRouter struct {
 type BalanceRouter struct {
 	*chi.Mux
 	Cursor *db.Cursor
+	Logger *zap.Logger
 }
 
 type Handler struct {
