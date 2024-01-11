@@ -37,9 +37,6 @@ func (h *UserRouter) Login(rw http.ResponseWriter, r *http.Request) {
 		ExpiresAt: expiresAt,
 		Token:     sessionToken,
 	})
-	if err != nil {
-		return
-	}
 
 	http.SetCookie(rw, &http.Cookie{
 		Name:    "session_token",
@@ -49,7 +46,4 @@ func (h *UserRouter) Login(rw http.ResponseWriter, r *http.Request) {
 	rw.WriteHeader(http.StatusOK)
 
 	_, err = rw.Write([]byte(`success`))
-	if err != nil {
-		return
-	}
 }

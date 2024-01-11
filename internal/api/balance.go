@@ -23,11 +23,13 @@ func (h *BalanceRouter) GetBalance(rw http.ResponseWriter, r *http.Request) {
 	encoder := json.NewEncoder(buff)
 	err = encoder.Encode(&balance)
 	if err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	rw.Header().Set("Content-Type", "application/json")
 	_, err = rw.Write(buff.Bytes())
 	if err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
