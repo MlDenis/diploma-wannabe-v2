@@ -3,13 +3,13 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/MlDenis/diploma-wannabe-v2/internal/db"
-	"github.com/MlDenis/diploma-wannabe-v2/internal/logger"
 	"github.com/MlDenis/diploma-wannabe-v2/internal/models"
 
 	"github.com/theplant/luhn"
@@ -36,7 +36,7 @@ func (h *OrderRouter) UploadOrder(rw http.ResponseWriter, r *http.Request) {
 
 	cookie, _ := r.Cookie("session_token")
 	sessionToken := cookie.Value
-	username, err := h.Cursor.GetUsernameByToken(sessionToken)
+	username, err := h.Cursor.GetUsernameByToken(sessionToken, h.Logger)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 	}
@@ -53,13 +53,13 @@ func (h *OrderRouter) UploadOrder(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order, err := GetOrderFromDB(h.Cursor, username, requestNumber)
+	order, err := GetOrderFromDB(h.Cursor, username, requestNumber, h.Logger)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	if order == nil {
-		logger.InfoLog.Printf("Adding new order %s for user %s", requestNumber, username)
+		h.Logger.Info("Adding new order for user", zap.String("", username))
 		newOrder := &models.Order{
 			Number:     requestNumber,
 			Username:   username,
@@ -68,11 +68,11 @@ func (h *OrderRouter) UploadOrder(rw http.ResponseWriter, r *http.Request) {
 		}
 		err := ValidateOrder(h.Cursor, newOrder)
 		if err != nil {
-			logger.ErrorLog.Printf("Validation error for new order %s, token %s", newOrder.Number, sessionToken)
+			h.Logger.Error("Validation error for new order, token", zap.String("", sessionToken))
 			http.Error(rw, "order was uploaded already by another user", http.StatusConflict)
 			return
 		}
-		err = h.Cursor.SaveOrder(newOrder)
+		err = h.Cursor.SaveOrder(newOrder, h.Logger)
 		if err != nil {
 			return
 		}
@@ -89,13 +89,13 @@ func (h *OrderRouter) UploadOrder(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.InfoLog.Println(order.Username, username)
+	h.Logger.Info(order.Username)
 	if order.Username != username {
-		logger.ErrorLog.Printf("Validation error for order %s, token %s", order.Number, sessionToken)
+		h.Logger.Error("Validation error for order, token", zap.String("", sessionToken))
 		http.Error(rw, "order was uploaded already by another user", http.StatusConflict)
 		return
 	}
-	logger.InfoLog.Printf("request number: %s", requestNumber)
+	h.Logger.Info("request number", zap.String("", requestNumber))
 
 	if order.Number == requestNumber {
 		rw.WriteHeader(http.StatusOK)
@@ -106,8 +106,8 @@ func (h *OrderRouter) UploadOrder(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func GetOrderFromDB(cursor *db.Cursor, username string, requestOrder string) (*models.Order, error) {
-	order, err := cursor.GetOrder(username, requestOrder)
+func GetOrderFromDB(cursor *db.Cursor, username string, requestOrder string, l *zap.Logger) (*models.Order, error) {
+	order, err := cursor.GetOrder(username, requestOrder, l)
 	if order == nil {
 		return nil, err
 	}
@@ -117,12 +117,12 @@ func GetOrderFromDB(cursor *db.Cursor, username string, requestOrder string) (*m
 func (h *OrderRouter) GetOrders(rw http.ResponseWriter, r *http.Request) {
 	cookie, _ := r.Cookie("session_token")
 	sessionToken := cookie.Value
-	username, err := h.Cursor.GetUsernameByToken(sessionToken)
+	username, err := h.Cursor.GetUsernameByToken(sessionToken, h.Logger)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 	}
 
-	orders, err := h.Cursor.GetOrders(username)
+	orders, err := h.Cursor.GetOrders(username, h.Logger)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 	}

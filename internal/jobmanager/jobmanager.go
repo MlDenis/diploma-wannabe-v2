@@ -3,7 +3,9 @@ package jobmanager
 import (
 	"context"
 	"github.com/MlDenis/diploma-wannabe-v2/internal/configuration"
+	"go.uber.org/zap"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -11,7 +13,6 @@ import (
 
 	"github.com/MlDenis/diploma-wannabe-v2/internal/db"
 	"github.com/MlDenis/diploma-wannabe-v2/internal/errors"
-	"github.com/MlDenis/diploma-wannabe-v2/internal/logger"
 	"github.com/MlDenis/diploma-wannabe-v2/internal/models"
 )
 
@@ -43,7 +44,7 @@ func NewJobmanager(cursor *db.Cursor, accrualURL string, parent *context.Context
 	}
 }
 
-func (jm *Jobmanager) AskAccrual(url string, number string) (*models.AccrualResponse, int, error) {
+func (jm *Jobmanager) AskAccrual(url string, number string, l *zap.Logger) (*models.AccrualResponse, int, error) {
 	acc := models.AccrualResponse{}
 	req := jm.client.R().
 		SetResult(&acc).
@@ -51,10 +52,10 @@ func (jm *Jobmanager) AskAccrual(url string, number string) (*models.AccrualResp
 
 	resp, err := req.Get("/api/orders/{number}")
 	if err != nil {
-		logger.ErrorLog.Printf("Error getting order from accrual: %e", err)
+		l.Error("Error getting order from accrual", zap.Error(err))
 		return nil, 0, err
 	}
-	logger.InfoLog.Printf("Accrual GET status code: %d", resp.StatusCode())
+	l.Info("Accrual GET status code", zap.String("", strconv.Itoa(resp.StatusCode())))
 	if resp.StatusCode() == 429 {
 		return nil, resp.StatusCode(), nil
 	}
@@ -64,8 +65,8 @@ func (jm *Jobmanager) AskAccrual(url string, number string) (*models.AccrualResp
 	return &acc, resp.StatusCode(), nil
 }
 
-func (jm *Jobmanager) RunJob(job *Job) {
-	response, statusCode, err := jm.AskAccrual(jm.AccrualURL, job.orderNumber)
+func (jm *Jobmanager) RunJob(job *Job, l *zap.Logger) {
+	response, statusCode, err := jm.AskAccrual(jm.AccrualURL, job.orderNumber, l)
 	if err != nil {
 		job.cancel()
 	}
@@ -73,7 +74,7 @@ func (jm *Jobmanager) RunJob(job *Job) {
 		time.Sleep(time.Second)
 	}
 	for response.Status != "INVALID" && response.Status != "PROCESSED" {
-		response, statusCode, err = jm.AskAccrual(jm.AccrualURL, job.orderNumber)
+		response, statusCode, err = jm.AskAccrual(jm.AccrualURL, job.orderNumber, l)
 		if err != nil {
 			job.cancel()
 		}
@@ -82,17 +83,17 @@ func (jm *Jobmanager) RunJob(job *Job) {
 			continue
 		}
 		jm.mu.Lock()
-		jm.Cursor.UpdateOrder(job.username, response)
+		jm.Cursor.UpdateOrder(job.username, response, l)
 		jm.mu.Unlock()
 	}
 	jm.mu.Lock()
-	jm.Cursor.UpdateOrder(job.username, response)
+	jm.Cursor.UpdateOrder(job.username, response, l)
 	jm.Cursor.UpdateUserBalance(job.username, &models.Balance{
 		Current:   response.Accrual,
 		Withdrawn: 0.0,
-	})
+	}, l)
 	jm.mu.Unlock()
-	logger.InfoLog.Println("Job finished")
+	l.Info("Job finished")
 }
 
 func (jm *Jobmanager) AddJob(orderNumber string, username string) error {
@@ -105,7 +106,7 @@ func (jm *Jobmanager) AddJob(orderNumber string, username string) error {
 	return nil
 }
 
-func (jm *Jobmanager) ManageJobs(accrualURL string) {
+func (jm *Jobmanager) ManageJobs(accrualURL string, l *zap.Logger) {
 	var wg sync.WaitGroup
 	select {
 	case <-jm.context.Done():
@@ -113,8 +114,8 @@ func (jm *Jobmanager) ManageJobs(accrualURL string) {
 	default:
 		for job := range jm.Jobs {
 			wg.Add(1)
-			logger.InfoLog.Printf("Running job for order %s", job.orderNumber)
-			go jm.RunJob(job)
+			l.Info("Running job for order", zap.String("", job.orderNumber))
+			go jm.RunJob(job, l)
 			wg.Done()
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,7 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/MlDenis/diploma-wannabe-v2/internal/db"
-	"github.com/MlDenis/diploma-wannabe-v2/internal/logger"
 	"github.com/MlDenis/diploma-wannabe-v2/internal/mocks"
 	"github.com/MlDenis/diploma-wannabe-v2/internal/models"
 )
@@ -87,7 +87,7 @@ func TestJobmanager(t *testing.T) {
 		createAccrualOrder, _ := http.NewRequest(http.MethodPost, "http://localhost:8081/api/orders/"+order, nil)
 		resp, err := client.Do(createAccrualOrder)
 		if err != nil {
-			logger.ErrorLog.Fatal(err)
+			log.Fatal(err)
 		}
 		defer resp.Body.Close()
 		assert.Equal(t, 200, resp.StatusCode)
@@ -104,7 +104,7 @@ func TestJobmanager(t *testing.T) {
 	assert.Equal(t, 200, response.StatusCode)
 	result := []*models.Order{}
 	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
-		logger.ErrorLog.Fatal(err)
+		log.Fatal(err)
 	}
 
 	assert.Equal(t, "11111111", result[0].Number)
@@ -125,7 +125,7 @@ func TestJobmanager(t *testing.T) {
 	assert.Equal(t, 200, response.StatusCode)
 	result = []*models.Order{}
 	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
-		logger.ErrorLog.Fatal(err)
+		log.Fatal(err)
 	}
 
 	assert.Equal(t, "11111111", result[0].Number)

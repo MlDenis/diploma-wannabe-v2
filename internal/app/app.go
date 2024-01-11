@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"go.uber.org/zap"
 	"net/http"
 
 	"github.com/MlDenis/diploma-wannabe-v2/internal/api"
@@ -15,24 +16,35 @@ type App struct {
 	config  *config.Config
 	manager *jobmanager.Jobmanager
 	Server  *http.Server
+	logger  *zap.Logger
 }
 
-func (a *App) Run() {
+func (a *App) Run() error {
+
 	go a.manager.ManageJobs(a.config.Accrual)
+
 	err := a.Server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
-		logger.InfoLog.Println("Shutting down jobmanager")
+		a.logger.Info("Shutting down jobmanager")
 		a.manager.Shutdown()
-		logger.ErrorLog.Fatalf("Server error: %e", err)
+		a.logger.Info("Server error: %e")
+		return err
 	}
+	return nil
 }
 
 func NewApp(config *config.Config) (*App, error) {
-	logger.InfoLog.Printf("Application is running on addr %s", config.Address)
-	logger.InfoLog.Printf("Accrual addr is %s", config.Accrual)
-	logger.InfoLog.Printf("DB addr is %s", config.DatabaseURI)
+	l, err := logger.InitializeLogger(config.LogLevel)
+	if err != nil {
+		return nil, err
+	}
+
+	l.Info("Application is running on addr: ", zap.String("", config.Address))
+	l.Info("Accrual addr is: ", zap.String("", config.Accrual))
+	l.Info("DB addr is: ", zap.String("", config.DatabaseURI))
+
 	ctx := context.Background()
-	cursor, err := db.GetCursor(config.DatabaseURI)
+	cursor, err := db.GetCursor(config.DatabaseURI, l)
 	if err != nil {
 		return nil, err
 	}
@@ -46,5 +58,6 @@ func NewApp(config *config.Config) (*App, error) {
 		config:  config,
 		manager: manager,
 		Server:  server,
+		logger:  l,
 	}, nil
 }

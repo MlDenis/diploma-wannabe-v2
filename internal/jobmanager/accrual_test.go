@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -11,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/MlDenis/diploma-wannabe-v2/internal/logger"
 	"github.com/MlDenis/diploma-wannabe-v2/internal/models"
 
 	"github.com/go-chi/chi/v5"
@@ -89,7 +89,7 @@ func initMockAccrual(addr string) *http.Server {
 	})
 	err := server.ListenAndServe()
 	if err != nil {
-		logger.ErrorLog.Printf("Failed to launch mock accrual server:%+v\n", err)
+		log.Printf("Failed to launch mock accrual server:%+v\n", err)
 	}
 	return server
 }
@@ -105,14 +105,14 @@ func TestAccrualValidOrder(t *testing.T) {
 	createOrder, _ := http.NewRequest(http.MethodPost, "http://localhost:8081/api/orders/1", nil)
 	resp, err := client.Do(createOrder)
 	if err != nil {
-		logger.ErrorLog.Fatal(err)
+		log.Fatal(err)
 	}
 	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
 	getOrder, _ := http.NewRequest(http.MethodGet, "http://localhost:8081/api/orders/1", nil)
 	resp, err = client.Do(getOrder)
 	if err != nil {
-		logger.ErrorLog.Fatal(err)
+		log.Fatal(err)
 	}
 	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
@@ -128,7 +128,7 @@ func TestAccrualValidOrder(t *testing.T) {
 	getOrder, _ = http.NewRequest(http.MethodGet, "http://localhost:8081/api/orders/1", nil)
 	resp, err = client.Do(getOrder)
 	if err != nil {
-		logger.ErrorLog.Fatal(err)
+		log.Fatal(err)
 	}
 	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
@@ -144,7 +144,7 @@ func TestAccrualValidOrder(t *testing.T) {
 	getOrder, _ = http.NewRequest(http.MethodGet, "http://localhost:8081/api/orders/1", nil)
 	resp, err = client.Do(getOrder)
 	if err != nil {
-		logger.ErrorLog.Fatal(err)
+		log.Fatal(err)
 	}
 	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
@@ -168,14 +168,14 @@ func TestAccrualInvalidOrder(t *testing.T) {
 	createOrder, _ := http.NewRequest(http.MethodPost, "http://localhost:8081/api/orders/2", nil)
 	resp, err := client.Do(createOrder)
 	if err != nil {
-		logger.ErrorLog.Fatal(err)
+		log.Fatal(err)
 	}
 	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
 	getOrder, _ := http.NewRequest(http.MethodGet, "http://localhost:8081/api/orders/2", nil)
 	resp, err = client.Do(getOrder)
 	if err != nil {
-		logger.ErrorLog.Fatal(err)
+		log.Fatal(err)
 	}
 	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
@@ -191,7 +191,7 @@ func TestAccrualInvalidOrder(t *testing.T) {
 	getOrder, _ = http.NewRequest(http.MethodGet, "http://localhost:8081/api/orders/2", nil)
 	resp, err = client.Do(getOrder)
 	if err != nil {
-		logger.ErrorLog.Fatal(err)
+		log.Fatal(err)
 	}
 	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
@@ -214,7 +214,7 @@ func TestAccrualNoSuchOrder(t *testing.T) {
 	getOrder, _ := http.NewRequest(http.MethodGet, "http://localhost:8081/api/orders/3", nil)
 	resp, err := client.Do(getOrder)
 	if err != nil {
-		logger.ErrorLog.Fatal(err)
+		log.Fatal(err)
 	}
 	defer resp.Body.Close()
 	assert.Equal(t, 204, resp.StatusCode)

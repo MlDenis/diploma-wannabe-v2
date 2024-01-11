@@ -1,21 +1,25 @@
 package main
 
 import (
+	"log"
+
 	"github.com/MlDenis/diploma-wannabe-v2/internal/app"
 	config "github.com/MlDenis/diploma-wannabe-v2/internal/configuration"
-	"github.com/MlDenis/diploma-wannabe-v2/internal/logger"
 )
 
 func main() {
 	flags := config.NewCliOptions()
 	envs, err := config.NewEnvConfig()
 	if err != nil {
-		logger.ErrorLog.Fatal(err)
+		log.Fatal(err)
 	}
-	newApp, _err := app.NewApp(config.NewConfig(flags, envs))
-	if _err != nil {
-		logger.ErrorLog.Fatal(_err)
-	}
-	newApp.Run()
+	cfg := config.NewConfig(flags, envs)
 
+	gophermart, err := app.NewApp(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := gophermart.Run(); err != nil {
+		log.Fatalln(err)
+	}
 }
