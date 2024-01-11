@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/MlDenis/diploma-wannabe-v2/internal/logger"
 	"github.com/MlDenis/diploma-wannabe-v2/internal/mocks"
 	"io"
 	"net/http"
@@ -74,6 +75,9 @@ func TestWithdrawal(t *testing.T) {
 			},
 		},
 	}
+
+	l, _ := logger.InitializeLogger("info")
+
 	handler := &Handler{
 		Mux: chi.NewMux(),
 		Cursor: &db.Cursor{
@@ -98,12 +102,13 @@ func TestWithdrawal(t *testing.T) {
 	handler.Cursor.SaveUserInfo(&models.UserInfo{
 		Username: "test",
 		Password: "test",
-	})
+	}, l)
 	handler.Cursor.SaveOrder(
 		&models.Order{
 			Number:     "2377225624",
 			UploadedAt: time.Now(),
 		},
+		l,
 	)
 	handler.Cursor.UpdateUserBalance(
 		"test", &models.Balance{
@@ -111,6 +116,7 @@ func TestWithdrawal(t *testing.T) {
 			Current:   752,
 			Withdrawn: 0,
 		},
+		l,
 	)
 
 	defer ts.Close()
@@ -214,6 +220,9 @@ func TestGetWithdrawal(t *testing.T) {
 			},
 		},
 	}
+
+	l, _ := logger.InitializeLogger("info")
+
 	handler := &Handler{
 		Mux: chi.NewMux(),
 		Cursor: &db.Cursor{
@@ -239,10 +248,10 @@ func TestGetWithdrawal(t *testing.T) {
 	handler.Cursor.SaveUserInfo(&models.UserInfo{
 		Username: "test",
 		Password: "test",
-	})
+	}, l)
 	for _, withdrawal := range mockWithdrawals {
 		withdrawal.User = "test"
-		handler.Cursor.SaveWithdrawal(withdrawal)
+		handler.Cursor.SaveWithdrawal(withdrawal, l)
 		withdrawal.User = ""
 	}
 

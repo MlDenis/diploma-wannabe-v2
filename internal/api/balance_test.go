@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/MlDenis/diploma-wannabe-v2/internal/logger"
 	"github.com/MlDenis/diploma-wannabe-v2/internal/mocks"
 	"net/http"
 	"net/http/httptest"
@@ -62,14 +63,16 @@ func TestBalanceGet(t *testing.T) {
 	handler.Post("/api/user/register", ur.RegisterUser)
 	handler.Post("/api/user/login", ur.Login)
 	handler.Get("/api/user/balance", br.GetBalance)
+	l, _ := logger.InitializeLogger("info")
 	ts := httptest.NewServer(handler)
 	handler.Cursor.SaveUserInfo(&models.UserInfo{
 		Username: "test",
 		Password: "test",
-	})
+	}, l)
 
 	result, _ := handler.Cursor.UpdateUserBalance(
 		"test", expectedBalance,
+		l,
 	)
 	assert.Equal(t, expectedBalance, result)
 

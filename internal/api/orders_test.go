@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/MlDenis/diploma-wannabe-v2/internal/db"
+	"github.com/MlDenis/diploma-wannabe-v2/internal/logger"
 	"github.com/MlDenis/diploma-wannabe-v2/internal/mocks"
 	"github.com/MlDenis/diploma-wannabe-v2/internal/models"
 	"io"
@@ -92,6 +93,9 @@ func TestPostOrders(t *testing.T) {
 			},
 		},
 	}
+
+	l, _ := logger.InitializeLogger("info")
+
 	handler := &Handler{
 		Mux: chi.NewMux(),
 		Cursor: &db.Cursor{
@@ -110,14 +114,16 @@ func TestPostOrders(t *testing.T) {
 			IDBInterface: mocks.NewMock(),
 		},
 	}
+
 	handler.Post("/api/user/register", ur.RegisterUser)
 	handler.Post("/api/user/login", ur.Login)
 	handler.Post("/api/user/orders", r.UploadOrder)
 	ts := httptest.NewServer(handler)
+
 	handler.Cursor.SaveUserInfo(&models.UserInfo{
 		Username: "test",
 		Password: "test",
-	})
+	}, l)
 
 	defer ts.Close()
 
@@ -264,12 +270,13 @@ func TestGetOrders(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			l, _ := logger.InitializeLogger("info")
 			request := httptest.NewRequest(http.MethodGet, tt.args.url, nil)
 
 			w := httptest.NewRecorder()
 			if tt.name == "Test Positive order get" {
 				for _, order := range orders {
-					handler.Cursor.SaveOrder(order)
+					handler.Cursor.SaveOrder(order, l)
 				}
 			}
 			handler.ServeHTTP(w, request)

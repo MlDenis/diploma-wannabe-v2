@@ -23,7 +23,7 @@ func (a *App) Run(ctx context.Context) error {
 
 	done := make(chan bool)
 
-	go a.manager.ManageJobs(ctx, a.config.Accrual, a.Logger)
+	go a.manager.ManageJobs(ctx, a.config.Accrual, done, a.Logger)
 
 	go func() {
 		if err := a.Server.ListenAndServe(); err != nil && err != http.ErrServerClosed {

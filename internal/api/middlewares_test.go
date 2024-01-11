@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/MlDenis/diploma-wannabe-v2/internal/logger"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -14,10 +15,11 @@ import (
 )
 
 func TestCookiesMiddleware(t *testing.T) {
+	l, _ := logger.InitializeLogger("info")
 	cursor := &db.Cursor{IDBInterface: mocks.NewMock()}
 	ctx := context.Background()
 	manager := jobmanager.NewJobmanager(cursor, "http://localhost:8081", &ctx)
-	handler := NewHandler(cursor, manager)
+	handler := NewHandler(cursor, manager, l)
 	ts := httptest.NewServer(handler)
 
 	defer ts.Close()

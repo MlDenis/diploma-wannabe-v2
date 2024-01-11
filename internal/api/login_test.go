@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/MlDenis/diploma-wannabe-v2/internal/logger"
 	"github.com/MlDenis/diploma-wannabe-v2/internal/mocks"
 	"io"
 	"net/http"
@@ -108,11 +109,12 @@ func TestAuthentication(t *testing.T) {
 		},
 	}
 	ur.Post("/api/user/login", ur.Login)
+	l, _ := logger.InitializeLogger("info")
 	ts := httptest.NewServer(ur)
 	ur.Cursor.SaveUserInfo(&models.UserInfo{
 		Username: "test",
 		Password: "test",
-	})
+	}, l)
 
 	defer ts.Close()
 

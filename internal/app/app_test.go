@@ -2,6 +2,7 @@ package app
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	config "github.com/MlDenis/diploma-wannabe-v2/internal/configuration"
 	"log"
@@ -14,13 +15,14 @@ import (
 )
 
 func TestApp(t *testing.T) {
+	ctx := context.Background()
 	flags := config.NewCliOptions()
 	envs, err := config.NewEnvConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
-	app, _ := NewApp(config.NewConfig(flags, envs))
-	go app.Run()
+	app, _ := NewApp(config.NewConfig(flags, envs), ctx)
+	go app.Run(ctx)
 
 	client := &http.Client{}
 

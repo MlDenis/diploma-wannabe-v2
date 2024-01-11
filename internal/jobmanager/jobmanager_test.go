@@ -29,6 +29,7 @@ func TestJobmanager(t *testing.T) {
 	l, _ := logger.InitializeLogger("info")
 	cursor := &db.Cursor{IDBInterface: mocks.NewMock()}
 	ctx := context.Background()
+	done := make(chan bool)
 	handler := &TestHandler{
 		chi.NewMux(),
 		cursor,
@@ -50,7 +51,7 @@ func TestJobmanager(t *testing.T) {
 	client := &http.Client{}
 
 	orders := []string{"11111111", "22222222"}
-	go handler.Manager.ManageJobs("http://localhost:8081", l)
+	go handler.Manager.ManageJobs(ctx, "http://localhost:8081", done, l)
 
 	buff := bytes.NewBuffer([]byte{})
 	encoder := json.NewEncoder(buff)

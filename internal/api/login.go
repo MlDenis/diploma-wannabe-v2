@@ -2,15 +2,14 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/MlDenis/diploma-wannabe-v2/internal/models"
-	"go.uber.org/zap"
 	"net/http"
 	"time"
 
+	"github.com/MlDenis/diploma-wannabe-v2/internal/models"
 	"github.com/google/uuid"
 )
 
-func (h *UserRouter) Login(rw http.ResponseWriter, r *http.Request, l *zap.Logger) {
+func (h *UserRouter) Login(rw http.ResponseWriter, r *http.Request) {
 	userInput := &models.UserInfo{}
 	if err := json.NewDecoder(r.Body).Decode(&userInput); err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
@@ -20,7 +19,7 @@ func (h *UserRouter) Login(rw http.ResponseWriter, r *http.Request, l *zap.Logge
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
-	dbData, err := h.Cursor.GetUserInfo(userInput, l)
+	dbData, err := h.Cursor.GetUserInfo(userInput, h.Logger)
 
 	if err != nil {
 		http.Error(rw, "wrong password/username", http.StatusUnauthorized)
@@ -37,7 +36,7 @@ func (h *UserRouter) Login(rw http.ResponseWriter, r *http.Request, l *zap.Logge
 		Username:  userInput.Username,
 		ExpiresAt: expiresAt,
 		Token:     sessionToken,
-	}, l)
+	}, h.Logger)
 
 	http.SetCookie(rw, &http.Cookie{
 		Name:    "session_token",
