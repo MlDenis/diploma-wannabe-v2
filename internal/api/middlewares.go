@@ -7,10 +7,7 @@ import (
 	"time"
 
 	"compress/gzip"
-	"github.com/gorilla/securecookie"
 )
-
-var s = securecookie.New([]byte("your-hash-key"), []byte("your-block-key"))
 
 type gzipWriter struct {
 	http.ResponseWriter
@@ -63,14 +60,8 @@ func (h *Handler) CookieHandle(next http.Handler) http.Handler {
 		}
 		sessionToken := c.Value
 
-		value := ""
-		err = s.Decode("session_token", sessionToken, &value)
-		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
+		userSession, err := h.Cursor.GetSession(sessionToken, h.Logger)
 
-		userSession, err := h.Cursor.GetSession(value, h.Logger)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -79,7 +70,6 @@ func (h *Handler) CookieHandle(next http.Handler) http.Handler {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-
 		next.ServeHTTP(w, r)
 	})
 }
