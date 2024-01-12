@@ -32,7 +32,7 @@ func (h *UserRouter) Login(rw http.ResponseWriter, r *http.Request) {
 	sessionToken := uuid.NewString()
 	expiresAt := time.Now().Add(600 * time.Second)
 
-	err = h.Cursor.SaveSession(sessionToken, &models.Session{
+	_ = h.Cursor.SaveSession(sessionToken, &models.Session{
 		Username:  userInput.Username,
 		ExpiresAt: expiresAt,
 		Token:     sessionToken,
@@ -45,5 +45,5 @@ func (h *UserRouter) Login(rw http.ResponseWriter, r *http.Request) {
 	})
 	rw.WriteHeader(http.StatusOK)
 
-	_, err = rw.Write([]byte(`success`))
+	_, _ = rw.Write([]byte(`success`))
 }
