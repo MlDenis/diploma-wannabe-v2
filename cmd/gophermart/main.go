@@ -13,6 +13,7 @@ func main() {
 	wg := &sync.WaitGroup{}
 
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	flags := config.NewCliOptions()
 	envs, err := config.NewEnvConfig()
@@ -35,13 +36,8 @@ func main() {
 			gophermart.Logger.Error(err.Error())
 		}
 	}(wg)
+	<-ctx.Done()
 
-	defer func() {
-		cancel()
-		wg.Wait()
-	}()
-
-	if err := gophermart.Server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		gophermart.Logger.Error(err.Error())
-	}
+	gophermart.Server.Shutdown(ctx)
+	wg.Wait()
 }
