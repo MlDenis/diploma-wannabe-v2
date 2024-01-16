@@ -43,6 +43,7 @@ func NewHandler(cursor *db.Cursor, manager *jobmanager.Jobmanager, l *zap.Logger
 	userRouter := &UserRouter{
 		Mux:    chi.NewMux(),
 		Cursor: cursor,
+		Logger: l,
 	}
 
 	balanceRouter := &BalanceRouter{
