@@ -74,6 +74,7 @@ func NewOrdersRouter(cursor *db.Cursor, manager *jobmanager.Jobmanager, l *zap.L
 		Mux:     chi.NewMux(),
 		Cursor:  cursor,
 		Manager: manager,
+		Logger:  l,
 	}
 	r.Post("/", r.UploadOrder)
 	r.Get("/", r.GetOrders)
