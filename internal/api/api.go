@@ -36,6 +36,7 @@ func NewHandler(cursor *db.Cursor, manager *jobmanager.Jobmanager, l *zap.Logger
 	handler := &Handler{
 		Mux:    chi.NewMux(),
 		Cursor: cursor,
+		Logger: l,
 	}
 	handler.Use(GzipHandle)
 	handler.Use(handler.CookieHandle)
@@ -49,6 +50,7 @@ func NewHandler(cursor *db.Cursor, manager *jobmanager.Jobmanager, l *zap.Logger
 	balanceRouter := &BalanceRouter{
 		Mux:    chi.NewMux(),
 		Cursor: cursor,
+		Logger: l,
 	}
 
 	handler.Route("/api/user", func(r chi.Router) {
